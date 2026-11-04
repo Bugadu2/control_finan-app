@@ -85,11 +85,9 @@
       <!-- Gráficos -->
       <h2 class="section-title">Visão financeira</h2>
 
-      <div class="grafico-card">
-        <ion-icon :icon="barChartOutline" />
-        <p>Gráficos financeiros</p>
-        <span>Adicionaremos os gráficos na próxima etapa.</span>
-      </div>
+      <GraficoDespesas />
+
+      <GraficoMensal />
 
       <!-- Movimentações -->
       <h2 class="section-title">Últimas movimentações</h2>
@@ -145,11 +143,12 @@ import {
   trendingDownOutline,
   addCircleOutline,
   removeCircleOutline,
-  barChartOutline,
   receiptOutline
 } from 'ionicons/icons';
 
 import { supabase } from '@/lib/supabase';
+import GraficoDespesas from '@/components/GraficoDespesas.vue';
+import GraficoMensal from '@/components/GraficoMensal.vue';
 
 interface Lancamento {
   id: string;
@@ -368,7 +367,6 @@ ion-content {
   font-weight: 600;
 }
 
-.grafico-card,
 .vazio {
   background: white;
   border-radius: 15px;
@@ -377,19 +375,16 @@ ion-content {
   color: #777;
 }
 
-.grafico-card ion-icon,
 .vazio ion-icon {
   font-size: 35px;
   color: #15965b;
 }
 
-.grafico-card p,
 .vazio p {
   font-weight: 600;
   color: #444;
 }
 
-.grafico-card span,
 .vazio span {
   font-size: 12px;
 }
