@@ -83,7 +83,4 @@ VITE_SUPABASE_KEY=sua_chave_publica
 ```bash
 ionic serve
 ```
-## 🎥 Demonstração
-
-
 Projeto acadêmico desenvolvido como atividade de desenvolvimento de aplicações móveis.
