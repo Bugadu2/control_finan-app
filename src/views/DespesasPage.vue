@@ -1,195 +1,229 @@
 
 <template>
   <ion-page>
-    <ion-header>
-      <ion-toolbar color="danger">
-        <ion-title>Minhas Despesas</ion-title>
-      </ion-toolbar>
-    </ion-header>
-
     <ion-content class="ion-padding">
+      <div class="container">
+        <h1>Minhas Despesas</h1>
+        <p>Gerencie seus gastos.</p>
 
-      <div class="topo">
-        <h1>Despesas</h1>
-        <p>Controle seus gastos.</p>
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>
+              {{ editando ? 'Editar despesa' : 'Nova despesa' }}
+            </ion-card-title>
+          </ion-card-header>
+
+          <ion-card-content>
+            <ion-item>
+              <ion-input
+                v-model="descricao"
+                label="Descrição"
+                label-placement="floating"
+                placeholder="Ex: Alimentação"
+              />
+            </ion-item>
+
+            <ion-item>
+              <ion-input
+                v-model="valor"
+                label="Valor (R$)"
+                label-placement="floating"
+                type="number"
+              />
+            </ion-item>
+
+            <ion-item>
+              <ion-select
+                v-model="categoria"
+                label="Categoria"
+                label-placement="floating"
+                placeholder="Selecione"
+              >
+                <ion-select-option value="Alimentação">Alimentação</ion-select-option>
+                <ion-select-option value="Transporte">Transporte</ion-select-option>
+                <ion-select-option value="Moradia">Moradia</ion-select-option>
+                <ion-select-option value="Educação">Educação</ion-select-option>
+                <ion-select-option value="Lazer">Lazer</ion-select-option>
+                <ion-select-option value="Saúde">Saúde</ion-select-option>
+                <ion-select-option value="Outros">Outros</ion-select-option>
+              </ion-select>
+            </ion-item>
+
+            <ion-item>
+              <ion-input
+                v-model="data"
+                label="Data"
+                label-placement="floating"
+                type="date"
+              />
+            </ion-item>
+
+            <ion-button expand="block" @click="salvarDespesa">
+              {{ editando ? 'Atualizar despesa' : 'Cadastrar despesa' }}
+            </ion-button>
+
+            <ion-button
+              v-if="editando"
+              expand="block"
+              fill="outline"
+              color="medium"
+              @click="limparFormulario"
+            >
+              Cancelar edição
+            </ion-button>
+          </ion-card-content>
+        </ion-card>
+
+        <h2>Histórico de despesas</h2>
+
+        <ion-card v-for="despesa in despesas" :key="despesa.id">
+          <ion-card-content>
+            <h3>{{ despesa.descricao }}</h3>
+            <p>Categoria: {{ despesa.categoria }}</p>
+            <p>Data: {{ despesa.data }}</p>
+            <strong>{{ formatarValor(despesa.valor) }}</strong>
+
+            <div class="botoes">
+              <ion-button size="small" @click="editarDespesa(despesa)">
+                Editar
+              </ion-button>
+
+              <ion-button
+                size="small"
+                color="danger"
+                @click="excluirDespesa(despesa.id)"
+              >
+                Excluir
+              </ion-button>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <p v-if="despesas.length === 0">
+          Nenhuma despesa cadastrada.
+        </p>
       </div>
-
-      <div class="form-card">
-        <h2>{{ editando ? 'Editar despesa' : 'Nova despesa' }}</h2>
-
-        <ion-item>
-          <ion-label position="stacked">Descrição</ion-label>
-          <ion-input v-model="descricao" placeholder="Ex: Mercado" />
-        </ion-item>
-
-        <ion-item>
-          <ion-label position="stacked">Valor (R$)</ion-label>
-          <ion-input v-model="valor" type="number" placeholder="Ex: 150" />
-        </ion-item>
-
-        <ion-item>
-          <ion-label position="stacked">Categoria</ion-label>
-          <ion-select v-model="categoria" placeholder="Selecione">
-            <ion-select-option value="Alimentação">Alimentação</ion-select-option>
-            <ion-select-option value="Transporte">Transporte</ion-select-option>
-            <ion-select-option value="Moradia">Moradia</ion-select-option>
-            <ion-select-option value="Educação">Educação</ion-select-option>
-            <ion-select-option value="Lazer">Lazer</ion-select-option>
-            <ion-select-option value="Saúde">Saúde</ion-select-option>
-            <ion-select-option value="Outros">Outros</ion-select-option>
-          </ion-select>
-        </ion-item>
-
-        <ion-item>
-          <ion-label position="stacked">Data</ion-label>
-          <ion-input v-model="data" type="date" />
-        </ion-item>
-
-        <ion-button expand="block" color="danger" class="botao" @click="salvarDespesa">
-          {{ editando ? 'Salvar alterações' : 'Adicionar despesa' }}
-        </ion-button>
-
-        <ion-button v-if="editando" expand="block" fill="clear" color="medium" @click="limparFormulario">
-          Cancelar edição
-        </ion-button>
-      </div>
-
-      <h2 class="titulo-lista">Histórico de despesas</h2>
-
-      <div v-if="despesas.length === 0" class="vazio">
-        <ion-icon :icon="walletOutline" />
-        <p>Nenhuma despesa cadastrada.</p>
-      </div>
-
-      <div v-for="despesa in despesas" :key="despesa.id" class="despesa-card">
-        <div>
-          <h3>{{ despesa.descricao }}</h3>
-          <p>{{ despesa.categoria }} • {{ despesa.data }}</p>
-          <strong>{{ formatarValor(despesa.valor) }}</strong>
-        </div>
-
-        <div class="acoes">
-          <ion-button fill="clear" color="primary" @click="editarDespesa(despesa)">
-            <ion-icon :icon="createOutline" />
-          </ion-button>
-
-          <ion-button fill="clear" color="danger" @click="excluirDespesa(despesa.id)">
-            <ion-icon :icon="trashOutline" />
-          </ion-button>
-        </div>
-      </div>
-
     </ion-content>
   </ion-page>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-
+import { ref, onMounted } from 'vue';
 import {
-  IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
-  IonItem, IonLabel, IonInput, IonSelect, IonSelectOption,
-  IonButton, IonIcon, alertController
+  IonPage, IonContent, IonCard, IonCardHeader,
+  IonCardTitle, IonCardContent, IonItem, IonInput,
+  IonSelect, IonSelectOption, IonButton, alertController
 } from '@ionic/vue';
 
-import {
-  walletOutline, createOutline, trashOutline
-} from 'ionicons/icons';
+import { supabase } from '@/lib/supabase';
 
 interface Despesa {
-  id: number;
+  id: string;
   descricao: string;
   valor: number;
   categoria: string;
   data: string;
+  user_id: string;
 }
 
 const despesas = ref<Despesa[]>([]);
-
 const descricao = ref('');
 const valor = ref('');
 const categoria = ref('');
-const data = ref('');
+const data = ref(new Date().toISOString().slice(0, 10));
+const editando = ref<string | null>(null);
 
-const editando = ref(false);
-const idEditando = ref<number | null>(null);
+onMounted(() => {
+  carregarDespesas();
+});
 
-function limparFormulario() {
-  descricao.value = '';
-  valor.value = '';
-  categoria.value = '';
-  data.value = '';
-  editando.value = false;
-  idEditando.value = null;
+async function carregarDespesas() {
+  const { data, error } = await supabase
+    .from('despesas')
+    .select('*')
+    .order('data', { ascending: false });
+
+  if (error) {
+    return mostrarAlerta('Erro', error.message);
+  }
+
+  despesas.value = data || [];
 }
 
 async function salvarDespesa() {
   if (
     !descricao.value.trim() ||
     !valor.value ||
+    Number(valor.value) <= 0 ||
     !categoria.value ||
-    !data.value ||
-    Number(valor.value) <= 0
+    !data.value
   ) {
-    const alerta = await alertController.create({
-      header: 'Atenção',
-      message: 'Preencha todos os campos corretamente.',
-      buttons: ['OK']
-    });
-
-    await alerta.present();
-    return;
+    return mostrarAlerta(
+      'Atenção',
+      'Preencha todos os campos corretamente.'
+    );
   }
 
-  if (editando.value && idEditando.value !== null) {
-    const indice = despesas.value.findIndex(
-      d => d.id === idEditando.value
-    );
+  const { data: usuario } = await supabase.auth.getUser();
 
-    if (indice !== -1) {
-      despesas.value[indice] = {
-        id: idEditando.value,
-        descricao: descricao.value,
-        valor: Number(valor.value),
-        categoria: categoria.value,
-        data: data.value
-      };
-    }
-  } else {
-    despesas.value.push({
-      id: Date.now(),
-      descricao: descricao.value,
-      valor: Number(valor.value),
-      categoria: categoria.value,
-      data: data.value
-    });
+  if (!usuario.user) {
+    return mostrarAlerta('Erro', 'Você precisa estar logado.');
+  }
+
+  const dados = {
+    descricao: descricao.value.trim(),
+    valor: Number(valor.value),
+    categoria: categoria.value,
+    data: data.value,
+    user_id: usuario.user.id
+  };
+
+  const resultado = editando.value
+    ? await supabase
+        .from('despesas')
+        .update(dados)
+        .eq('id', editando.value)
+    : await supabase
+        .from('despesas')
+        .insert(dados);
+
+  if (resultado.error) {
+    return mostrarAlerta('Erro ao salvar', resultado.error.message);
   }
 
   limparFormulario();
+  await carregarDespesas();
 }
 
 function editarDespesa(despesa: Despesa) {
+  editando.value = despesa.id;
   descricao.value = despesa.descricao;
   valor.value = String(despesa.valor);
   categoria.value = despesa.categoria;
   data.value = despesa.data;
-  editando.value = true;
-  idEditando.value = despesa.id;
 }
 
-async function excluirDespesa(id: number) {
+async function excluirDespesa(id: string) {
   const alerta = await alertController.create({
-    header: 'Excluir despesa',
+    header: 'Excluir despesa?',
     message: 'Deseja realmente excluir esta despesa?',
     buttons: [
       { text: 'Cancelar', role: 'cancel' },
       {
         text: 'Excluir',
         role: 'destructive',
-        handler: () => {
-          despesas.value = despesas.value.filter(
-            despesa => despesa.id !== id
-          );
+        handler: async () => {
+          const { error } = await supabase
+            .from('despesas')
+            .delete()
+            .eq('id', id);
+
+          if (error) {
+            await mostrarAlerta('Erro', error.message);
+            return;
+          }
+
+          await carregarDespesas();
         }
       }
     ]
@@ -198,94 +232,54 @@ async function excluirDespesa(id: number) {
   await alerta.present();
 }
 
+function limparFormulario() {
+  descricao.value = '';
+  valor.value = '';
+  categoria.value = '';
+  data.value = new Date().toISOString().slice(0, 10);
+  editando.value = null;
+}
+
 function formatarValor(valor: number) {
   return valor.toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL'
   });
 }
+
+async function mostrarAlerta(titulo: string, mensagem: string) {
+  const alerta = await alertController.create({
+    header: titulo,
+    message: mensagem,
+    buttons: ['OK']
+  });
+
+  await alerta.present();
+}
 </script>
 
 <style scoped>
-ion-content {
-  --background: #f5f7f6;
+.container {
+  max-width: 650px;
+  margin: auto;
 }
 
-.topo h1 {
-  font-size: 25px;
-  font-weight: 800;
-  color: #202a24;
+h1 {
+  color: #16a36a;
+  font-weight: bold;
 }
 
-.topo p {
-  color: #777;
+h2 {
+  margin-top: 30px;
 }
 
-.form-card {
-  background: white;
-  padding: 18px;
-  border-radius: 16px;
-  box-shadow: 0 2px 10px #00000008;
-}
-
-.form-card h2 {
-  font-size: 19px;
-  font-weight: 700;
-}
-
-ion-item {
-  --background: white;
-  --padding-start: 0;
-  margin-bottom: 10px;
-}
-
-.botao {
-  margin-top: 20px;
-  height: 46px;
-}
-
-.titulo-lista {
-  font-size: 19px;
-  font-weight: 700;
-  margin: 25px 0 15px;
-}
-
-.despesa-card {
-  background: white;
+ion-card {
   border-radius: 14px;
-  padding: 15px;
-  margin-bottom: 12px;
+}
+
+.botoes {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.despesa-card h3 {
-  font-size: 16px;
-  margin: 0 0 5px;
-}
-
-.despesa-card p {
-  color: #777;
-  font-size: 12px;
-}
-
-.despesa-card strong {
-  color: #dc3545;
-}
-
-.acoes {
-  display: flex;
-}
-
-.vazio {
-  text-align: center;
-  padding: 30px;
-  color: #888;
-}
-
-.vazio ion-icon {
-  font-size: 40px;
-  color: #dc3545;
+  gap: 8px;
+  margin-top: 12px;
 }
 </style>
