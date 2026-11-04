@@ -85,9 +85,5 @@ ionic serve
 ```
 ## 🎥 Demonstração
 
-Vídeo demonstrativo do Control Finan:
-
-[Assistir à demonstração]()
-##  Desenvolvedor
 
 Projeto acadêmico desenvolvido como atividade de desenvolvimento de aplicações móveis.
