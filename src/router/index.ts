@@ -40,6 +40,10 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/DespesasPage.vue')
       },
       {
+  path: 'orcamento',
+  component: () => import('@/views/OrcamentoPage.vue')
+},
+      {
         path: 'perfil',
         component: () => import('@/views/PerfilPage.vue')
       } 

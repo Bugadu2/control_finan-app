@@ -21,6 +21,11 @@
           <ion-label>Despesas</ion-label>
         </ion-tab-button>
 
+        <ion-tab-button tab="orcamento" href="/tabs/orcamento">
+          <ion-icon :icon="wallet" />
+          <ion-label>Orçamento</ion-label>
+        </ion-tab-button>
+
         <ion-tab-button tab="perfil" href="/tabs/perfil">
           <ion-icon :icon="person" />
           <ion-label>Perfil</ion-label>
@@ -46,6 +51,7 @@ import {
   home,
   arrowUpCircle,
   arrowDownCircle,
-  person
+  person,
+  wallet
 } from 'ionicons/icons';
 </script>

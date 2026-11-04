@@ -10,11 +10,46 @@
         <ion-icon :icon="walletOutline" class="wallet-icon" />
       </div>
 
-      <!-- Saldo -->
       <div class="saldo-card">
         <p>Saldo atual</p>
         <h1>{{ formatarValor(saldo) }}</h1>
         <span>Seu resumo financeiro</span>
+      </div>
+
+      <!-- Filtro por período -->
+      <h2 class="section-title">Filtrar por período</h2>
+
+      <div class="filtro-periodo">
+        <ion-item>
+          <ion-input
+            v-model="dataInicio"
+            type="date"
+            label="Data inicial"
+            label-placement="stacked"
+          />
+        </ion-item>
+
+        <ion-item>
+          <ion-input
+            v-model="dataFim"
+            type="date"
+            label="Data final"
+            label-placement="stacked"
+          />
+        </ion-item>
+
+        <ion-button expand="block" @click="aplicarFiltro">
+          Aplicar filtro
+        </ion-button>
+
+        <ion-button
+          expand="block"
+          fill="outline"
+          color="medium"
+          @click="limparFiltro"
+        >
+          Limpar filtro
+        </ion-button>
       </div>
 
       <!-- Receitas e despesas -->
@@ -85,9 +120,15 @@
       <!-- Gráficos -->
       <h2 class="section-title">Visão financeira</h2>
 
-      <GraficoDespesas />
+      <GraficoDespesas
+        :despesas="despesasFiltradas"
+        :carregando="carregando"
+      />
 
-      <GraficoMensal />
+      <GraficoMensal
+        :receitas="receitasFiltradas"
+        :despesas="despesasFiltradas"
+      />
 
       <!-- Movimentações -->
       <h2 class="section-title">Últimas movimentações</h2>
@@ -134,6 +175,8 @@ import {
   IonButton,
   IonCard,
   IonCardContent,
+  IonItem,
+  IonInput,
   alertController
 } from '@ionic/vue';
 
@@ -147,6 +190,7 @@ import {
 } from 'ionicons/icons';
 
 import { supabase } from '@/lib/supabase';
+
 import GraficoDespesas from '@/components/GraficoDespesas.vue';
 import GraficoMensal from '@/components/GraficoMensal.vue';
 
@@ -162,18 +206,44 @@ interface Lancamento {
 const receitas = ref<Lancamento[]>([]);
 const despesas = ref<Lancamento[]>([]);
 
+const carregando = ref(true);
+
+const dataInicio = ref('');
+const dataFim = ref('');
+
+const inicioAplicado = ref('');
+const fimAplicado = ref('');
+
+const receitasFiltradas = computed(() =>
+  receitas.value.filter(item =>
+    (!inicioAplicado.value || item.data >= inicioAplicado.value) &&
+    (!fimAplicado.value || item.data <= fimAplicado.value)
+  )
+);
+
+const despesasFiltradas = computed(() =>
+  despesas.value.filter(item =>
+    (!inicioAplicado.value || item.data >= inicioAplicado.value) &&
+    (!fimAplicado.value || item.data <= fimAplicado.value)
+  )
+);
+
 const totalReceitas = computed(() =>
-  receitas.value.reduce((total, item) => total + Number(item.valor), 0)
+  receitasFiltradas.value.reduce(
+    (total, item) => total + Number(item.valor), 0
+  )
 );
 
 const totalDespesas = computed(() =>
-  despesas.value.reduce((total, item) => total + Number(item.valor), 0)
+  despesasFiltradas.value.reduce(
+    (total, item) => total + Number(item.valor), 0
+  )
 );
 
 const saldo = computed(() => totalReceitas.value - totalDespesas.value);
 
 const quantidadeLancamentos = computed(() =>
-  receitas.value.length + despesas.value.length
+  receitasFiltradas.value.length + despesasFiltradas.value.length
 );
 
 const percentualDespesas = computed(() => {
@@ -185,11 +255,11 @@ const percentualDespesas = computed(() => {
 });
 
 const maiorCategoria = computed(() => {
-  if (despesas.value.length === 0) return 'Nenhuma';
+  if (despesasFiltradas.value.length === 0) return 'Nenhuma';
 
   const categorias: Record<string, number> = {};
 
-  despesas.value.forEach((despesa) => {
+  despesasFiltradas.value.forEach(despesa => {
     categorias[despesa.categoria] =
       (categorias[despesa.categoria] || 0) + Number(despesa.valor);
   });
@@ -199,7 +269,7 @@ const maiorCategoria = computed(() => {
 });
 
 const movimentacoes = computed(() =>
-  [...receitas.value, ...despesas.value]
+  [...receitasFiltradas.value, ...despesasFiltradas.value]
     .sort((a, b) => b.data.localeCompare(a.data))
     .slice(0, 5)
 );
@@ -209,6 +279,8 @@ onMounted(() => {
 });
 
 async function carregarDados() {
+  carregando.value = true;
+
   const [resultadoReceitas, resultadoDespesas] = await Promise.all([
     supabase.from('receitas').select('*').order('data', { ascending: false }),
     supabase.from('despesas').select('*').order('data', { ascending: false })
@@ -216,6 +288,7 @@ async function carregarDados() {
 
   if (resultadoReceitas.error || resultadoDespesas.error) {
     const erro = resultadoReceitas.error || resultadoDespesas.error;
+    carregando.value = false;
     return mostrarAlerta('Erro ao carregar dados', erro.message);
   }
 
@@ -228,6 +301,31 @@ async function carregarDados() {
     ...item,
     tipo: 'despesa' as const
   }));
+
+  carregando.value = false;
+}
+
+function aplicarFiltro() {
+  if (
+    dataInicio.value &&
+    dataFim.value &&
+    dataInicio.value > dataFim.value
+  ) {
+    return mostrarAlerta(
+      'Período inválido',
+      'A data inicial não pode ser posterior à data final.'
+    );
+  }
+
+  inicioAplicado.value = dataInicio.value;
+  fimAplicado.value = dataFim.value;
+}
+
+function limparFiltro() {
+  dataInicio.value = '';
+  dataFim.value = '';
+  inicioAplicado.value = '';
+  fimAplicado.value = '';
 }
 
 function formatarValor(valor: number) {
@@ -304,6 +402,17 @@ ion-content {
 .saldo-card span {
   font-size: 13px;
   opacity: 0.8;
+}
+
+.filtro-periodo {
+  background: white;
+  padding: 15px;
+  border-radius: 15px;
+  margin-bottom: 15px;
+}
+
+.filtro-periodo ion-item {
+  margin-bottom: 8px;
 }
 
 .resumo {

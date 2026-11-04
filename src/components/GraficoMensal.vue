@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { computed } from 'vue';
 import {
   IonCard,
   IonCardHeader,
@@ -34,54 +34,12 @@ import {
   IonCardContent
 } from '@ionic/vue';
 
-import { supabase } from '@/lib/supabase';
-
-const carregando = ref(true);
-const temDados = ref(false);
-
-const series = ref([
-  { name: 'Receitas', data: [] as number[] },
-  { name: 'Despesas', data: [] as number[] }
-]);
-
-const opcoes = ref({
-  chart: {
-    toolbar: { show: false }
-  },
-  xaxis: {
-    categories: [] as string[]
-  },
-  plotOptions: {
-    bar: {
-      borderRadius: 5,
-      columnWidth: '50%'
-    }
-  },
-  dataLabels: {
-    enabled: false
-  },
-  legend: {
-    position: 'bottom' as const
-  }
-});
-
-async function carregarDados() {
-  carregando.value = true;
-
-  const [resultadoReceitas, resultadoDespesas] = await Promise.all([
-    supabase.from('receitas').select('valor, data'),
-    supabase.from('despesas').select('valor, data')
-  ]);
-
-  if (resultadoReceitas.error || resultadoDespesas.error) {
-    console.error(
-      resultadoReceitas.error || resultadoDespesas.error
-    );
-
-    carregando.value = false;
-    return;
-  }
-
+const props = defineProps<{
+  receitas: { valor: number; data: string }[];
+  despesas: { valor: number; data: string }[];
+  carregando?: boolean;
+}>();
+const dadosPorMes = computed(() => {
   const meses: Record<string, { receitas: number; despesas: number }> = {};
 
   function adicionarLancamentos(
@@ -99,39 +57,49 @@ async function carregarDados() {
     });
   }
 
-  adicionarLancamentos(resultadoReceitas.data || [], 'receitas');
-  adicionarLancamentos(resultadoDespesas.data || [], 'despesas');
+  adicionarLancamentos(props.receitas, 'receitas');
+  adicionarLancamentos(props.despesas, 'despesas');
 
-  const mesesOrdenados = Object.keys(meses).sort();
+  return meses;
+});
 
-  opcoes.value = {
-    ...opcoes.value,
-    xaxis: {
-      categories: mesesOrdenados.map((mes) => {
-        const [ano, numeroMes] = mes.split('-');
-        return `${numeroMes}/${ano}`;
-      })
+const mesesOrdenados = computed(() => Object.keys(dadosPorMes.value).sort());
+const temDados = computed(() => mesesOrdenados.value.length > 0);
+
+const opcoes = computed(() => ({
+  chart: {
+    toolbar: { show: false }
+  },
+  xaxis: {
+    categories: mesesOrdenados.value.map((mes) => {
+      const [ano, numeroMes] = mes.split('-');
+      return `${numeroMes}/${ano}`;
+    })
+  },
+  plotOptions: {
+    bar: {
+      borderRadius: 5,
+      columnWidth: '50%'
     }
-  };
+  },
+  dataLabels: {
+    enabled: false
+  },
+  legend: {
+    position: 'bottom' as const
+  }
+}));
 
-  series.value = [
+const series = computed(() => [
     {
       name: 'Receitas',
-      data: mesesOrdenados.map((mes) => meses[mes].receitas)
+      data: mesesOrdenados.value.map((mes) => dadosPorMes.value[mes].receitas)
     },
     {
       name: 'Despesas',
-      data: mesesOrdenados.map((mes) => meses[mes].despesas)
+      data: mesesOrdenados.value.map((mes) => dadosPorMes.value[mes].despesas)
     }
-  ];
-
-  temDados.value = mesesOrdenados.length > 0;
-  carregando.value = false;
-}
-
-onMounted(() => {
-  carregarDados();
-});
+  ]);
 </script>
 
 <style scoped>

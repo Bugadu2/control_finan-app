@@ -26,16 +26,29 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { computed } from 'vue';
 import { IonCard, IonCardHeader, IonCardTitle, IonCardContent } from '@ionic/vue';
-import { supabase } from '@/lib/supabase';
 
-const series = ref<number[]>([]);
-const categorias = ref<string[]>([]);
-const carregando = ref(true);
+const props = defineProps<{
+  despesas: { categoria: string; valor: number }[];
+  carregando: boolean;
+}>();
 
-const opcoes = ref({
-  labels: categorias.value,
+const totaisPorCategoria = computed(() => {
+  const totais: Record<string, number> = {};
+
+  props.despesas.forEach((despesa) => {
+    totais[despesa.categoria] =
+      (totais[despesa.categoria] || 0) + Number(despesa.valor);
+  });
+
+  return totais;
+});
+
+const series = computed(() => Object.values(totaisPorCategoria.value));
+
+const opcoes = computed(() => ({
+  labels: Object.keys(totaisPorCategoria.value),
   legend: {
     position: 'bottom' as const
   },
@@ -50,42 +63,7 @@ const opcoes = ref({
       }
     }
   }]
-});
-
-async function carregarDespesas() {
-  carregando.value = true;
-
-  const { data, error } = await supabase
-    .from('despesas')
-    .select('categoria, valor');
-
-  if (error) {
-    console.error('Erro ao carregar despesas:', error.message);
-    carregando.value = false;
-    return;
-  }
-
-  const totais: Record<string, number> = {};
-
-  data?.forEach((despesa) => {
-    totais[despesa.categoria] =
-      (totais[despesa.categoria] || 0) + Number(despesa.valor);
-  });
-
-  categorias.value = Object.keys(totais);
-  series.value = Object.values(totais);
-
-  opcoes.value = {
-    ...opcoes.value,
-    labels: categorias.value
-  };
-
-  carregando.value = false;
-}
-
-onMounted(() => {
-  carregarDespesas();
-});
+}));
 </script>
 
 <style scoped>
